@@ -28,6 +28,12 @@ public class Task implements Serializable {
     private String content;
     @Column(name = "answer")
     private String answer;
+    @Column(name = "dynamic_flag_enabled", nullable = false)
+    private boolean dynamicFlagEnabled;
+    @Column(name = "dynamic_flag_interval_minutes")
+    private Integer dynamicFlagIntervalMinutes;
+    @Column(name = "dynamic_flag_secret")
+    private String dynamicFlagSecret;
     @Column(name = "solution")
     private String solution;
     @Column(name = "incorrect_answer_limit")
@@ -82,6 +88,30 @@ public class Task implements Serializable {
         this.answer = answer;
     }
 
+    public boolean isDynamicFlagEnabled() {
+        return dynamicFlagEnabled;
+    }
+
+    public void setDynamicFlagEnabled(boolean dynamicFlagEnabled) {
+        this.dynamicFlagEnabled = dynamicFlagEnabled;
+    }
+
+    public Integer getDynamicFlagIntervalMinutes() {
+        return dynamicFlagIntervalMinutes;
+    }
+
+    public void setDynamicFlagIntervalMinutes(Integer dynamicFlagIntervalMinutes) {
+        this.dynamicFlagIntervalMinutes = dynamicFlagIntervalMinutes;
+    }
+
+    public String getDynamicFlagSecret() {
+        return dynamicFlagSecret;
+    }
+
+    public void setDynamicFlagSecret(String dynamicFlagSecret) {
+        this.dynamicFlagSecret = dynamicFlagSecret;
+    }
+
     public String getSolution() {
         return solution;
     }
@@ -129,6 +159,8 @@ public class Task implements Serializable {
                 ", title='" + this.getTitle() + '\'' +
                 ", content='" + this.getContent() + '\'' +
                 ", answer='" + this.getAnswer() + '\'' +
+                ", dynamicFlagEnabled=" + this.isDynamicFlagEnabled() +
+                ", dynamicFlagIntervalMinutes=" + this.getDynamicFlagIntervalMinutes() +
                 ", solution='" + this.getSolution() + '\'' +
                 ", incorrectAnswerLimit=" + this.getIncorrectAnswerLimit() +
                 ", modifySandbox=" + this.isModifySandbox() +

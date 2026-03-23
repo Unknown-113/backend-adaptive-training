@@ -337,18 +337,18 @@ public class TestDataFactory {
         return clone(decisionMatrixRowDTO1, DecisionMatrixRowDTO.class);
     }
 
-    private Task task11 = generateTask("Task11", "Content of task11", 0, "answer11", "solution11", 2, true, 20);
-    private Task task12 = generateTask("Task12", "Content of task12", 1, "answer12", "solution12", 5, false, 15);
-    private Task task13 = generateTask("Task13", "Content of task13", 2, "answer13", "solution13", 4, true, 10);
-    private Task task21 = generateTask("Task21", "Content of task21", 0, "answer21", "solution21", 2, true, 35);
-    private Task task22 = generateTask("Task22", "Content of task22", 1, "answer22", "solution22", 3, false, 22);
-    private Task task23 = generateTask("Task23", "Content of task23", 2, "answer23", "solution23", 5, false, 50);
-    private Task task31 = generateTask("Task31", "Content of task31", 0, "answer31", "solution31", 9, true, 60);
-    private Task task32 = generateTask("Task32", "Content of task32", 1, "answer32", "solution32", 5, false, 40);
-    private Task task33 = generateTask("Task33", "Content of task33", 2, "answer33", "solution33", 3, true, 20);
+    private Task task11 = generateTask("Task11", "Content of task11", 0, "answer11", "solution11", 2, true, 20, false, null, null);
+    private Task task12 = generateTask("Task12", "Content of task12", 1, "answer12", "solution12", 5, false, 15, false, null, null);
+    private Task task13 = generateTask("Task13", "Content of task13", 2, "answer13", "solution13", 4, true, 10, false, null, null);
+    private Task task21 = generateTask("Task21", "Content of task21", 0, "answer21", "solution21", 2, true, 35, false, null, null);
+    private Task task22 = generateTask("Task22", "Content of task22", 1, "answer22", "solution22", 3, false, 22, false, null, null);
+    private Task task23 = generateTask("Task23", "Content of task23", 2, "answer23", "solution23", 5, false, 50, false, null, null);
+    private Task task31 = generateTask("Task31", "Content of task31", 0, "answer31", "solution31", 9, true, 60, false, null, null);
+    private Task task32 = generateTask("Task32", "Content of task32", 1, "answer32", "solution32", 5, false, 40, false, null, null);
+    private Task task33 = generateTask("Task33", "Content of task33", 2, "answer33", "solution33", 3, true, 20, false, null, null);
 
-    private TaskUpdateDTO taskUpdateDTO = generateTaskUpdateDTO("Updated task title", "Updated task content", "Updated answer", "Updated solution", 10, false, 10);
-    private TaskCopyDTO taskCopyDTO = generateTaskCopyDTO("Copied task title", "Copied task content", "Copied answer", "Copied solution", 5, true, 20);
+    private TaskUpdateDTO taskUpdateDTO = generateTaskUpdateDTO("Updated task title", "Updated task content", null, "Updated solution", 10, false, 10, true, 15, "updated-dynamic-secret");
+    private TaskCopyDTO taskCopyDTO = generateTaskCopyDTO("Copied task title", "Copied task content", null, "Copied solution", 5, true, 20, true, 30, "copied-dynamic-secret");
 
     public InfoPhase getInfoPhase1() {
         return clone(infoPhase1, InfoPhase.class);
@@ -666,12 +666,15 @@ public class TestDataFactory {
         return newAccessToken;
     }
 
-    private Task generateTask(String title, String content, Integer order, String answer, String solution, int incorrectAnswerLimit, boolean modifySandbox, int sandboxChangeExpectedDuration) {
+    private Task generateTask(String title, String content, Integer order, String answer, String solution, int incorrectAnswerLimit, boolean modifySandbox, int sandboxChangeExpectedDuration, boolean dynamicFlagEnabled, Integer dynamicFlagIntervalMinutes, String dynamicFlagSecret) {
         Task newTask = new Task();
         newTask.setTitle(title);
         newTask.setContent(content);
         newTask.setOrder(order);
         newTask.setAnswer(answer);
+        newTask.setDynamicFlagEnabled(dynamicFlagEnabled);
+        newTask.setDynamicFlagIntervalMinutes(dynamicFlagIntervalMinutes);
+        newTask.setDynamicFlagSecret(dynamicFlagSecret);
         newTask.setSolution(solution);
         newTask.setIncorrectAnswerLimit(incorrectAnswerLimit);
         newTask.setModifySandbox(modifySandbox);
@@ -679,11 +682,14 @@ public class TestDataFactory {
         return newTask;
     }
 
-    private TaskUpdateDTO generateTaskUpdateDTO(String title, String content, String answer, String solution, int incorrectAnswerLimit, boolean modifySandbox, int sandboxChangeExpectedDuration) {
+    private TaskUpdateDTO generateTaskUpdateDTO(String title, String content, String answer, String solution, int incorrectAnswerLimit, boolean modifySandbox, int sandboxChangeExpectedDuration, boolean dynamicFlagEnabled, Integer dynamicFlagIntervalMinutes, String dynamicFlagSecret) {
         TaskUpdateDTO taskUpdateDTO = new TaskUpdateDTO();
         taskUpdateDTO.setTitle(title);
         taskUpdateDTO.setContent(content);
         taskUpdateDTO.setAnswer(answer);
+        taskUpdateDTO.setDynamicFlagEnabled(dynamicFlagEnabled);
+        taskUpdateDTO.setDynamicFlagIntervalMinutes(dynamicFlagIntervalMinutes);
+        taskUpdateDTO.setDynamicFlagSecret(dynamicFlagSecret);
         taskUpdateDTO.setSolution(solution);
         taskUpdateDTO.setIncorrectAnswerLimit(incorrectAnswerLimit);
         taskUpdateDTO.setModifySandbox(modifySandbox);
@@ -691,11 +697,14 @@ public class TestDataFactory {
         return taskUpdateDTO;
     }
 
-    private TaskCopyDTO generateTaskCopyDTO(String title, String content, String answer, String solution, int incorrectAnswerLimit, boolean modifySandbox, int sandboxChangeExpectedDuration) {
+    private TaskCopyDTO generateTaskCopyDTO(String title, String content, String answer, String solution, int incorrectAnswerLimit, boolean modifySandbox, int sandboxChangeExpectedDuration, boolean dynamicFlagEnabled, Integer dynamicFlagIntervalMinutes, String dynamicFlagSecret) {
         TaskCopyDTO taskCopyDTO = new TaskCopyDTO();
         taskCopyDTO.setTitle(title);
         taskCopyDTO.setContent(content);
         taskCopyDTO.setAnswer(answer);
+        taskCopyDTO.setDynamicFlagEnabled(dynamicFlagEnabled);
+        taskCopyDTO.setDynamicFlagIntervalMinutes(dynamicFlagIntervalMinutes);
+        taskCopyDTO.setDynamicFlagSecret(dynamicFlagSecret);
         taskCopyDTO.setSolution(solution);
         taskCopyDTO.setIncorrectAnswerLimit(incorrectAnswerLimit);
         taskCopyDTO.setModifySandbox(modifySandbox);

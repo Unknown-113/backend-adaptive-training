@@ -112,6 +112,9 @@ class TasksControllerIT {
         assertThat(createdTask.getOrder(), is(0));
         assertThat(createdTask.getContent(), is("Task content ..."));
         assertThat(createdTask.getAnswer(), is("Secret flag"));
+        assertThat(createdTask.isDynamicFlagEnabled(), is(false));
+        assertThat(createdTask.getDynamicFlagIntervalMinutes(), is((Integer) null));
+        assertThat(createdTask.getDynamicFlagSecret(), is((String) null));
         assertThat(createdTask.getSolution(), is("Task solution ..."));
         assertThat(createdTask.getIncorrectAnswerLimit(), is(10));
         assertThat(createdTask.isModifySandbox(), is(false));
@@ -124,6 +127,9 @@ class TasksControllerIT {
         assertThat(createdTaskEntity.getOrder(), is(0));
         assertThat(createdTaskEntity.getContent(), is("Task content ..."));
         assertThat(createdTaskEntity.getAnswer(), is("Secret flag"));
+        assertThat(createdTaskEntity.isDynamicFlagEnabled(), is(false));
+        assertThat(createdTaskEntity.getDynamicFlagIntervalMinutes(), is((Integer) null));
+        assertThat(createdTaskEntity.getDynamicFlagSecret(), is((String) null));
         assertThat(createdTaskEntity.getSolution(), is("Task solution ..."));
         assertThat(createdTaskEntity.isModifySandbox(), is(false));
         assertThat(createdTaskEntity.getSandboxChangeExpectedDuration(), is(0));
@@ -139,6 +145,9 @@ class TasksControllerIT {
         assertThat(returnedTask.getOrder(), is(0));
         assertThat(returnedTask.getContent(), is("Content of task11"));
         assertThat(returnedTask.getAnswer(), is("answer11"));
+        assertThat(returnedTask.isDynamicFlagEnabled(), is(false));
+        assertThat(returnedTask.getDynamicFlagIntervalMinutes(), is((Integer) null));
+        assertThat(returnedTask.getDynamicFlagSecret(), is((String) null));
         assertThat(returnedTask.getSolution(), is("solution11"));
         assertThat(returnedTask.getIncorrectAnswerLimit(), is(2));
         assertThat(returnedTask.isModifySandbox(), is(true));
@@ -163,6 +172,9 @@ class TasksControllerIT {
         assertThat(updatedTask.getOrder(), is(0));
         assertThat(updatedTask.getContent(), is(taskUpdateDTO.getContent()));
         assertThat(updatedTask.getAnswer(), is(taskUpdateDTO.getAnswer()));
+        assertThat(updatedTask.isDynamicFlagEnabled(), is(taskUpdateDTO.isDynamicFlagEnabled()));
+        assertThat(updatedTask.getDynamicFlagIntervalMinutes(), is(taskUpdateDTO.getDynamicFlagIntervalMinutes()));
+        assertThat(updatedTask.getDynamicFlagSecret(), is(taskUpdateDTO.getDynamicFlagSecret()));
         assertThat(updatedTask.getSolution(), is(taskUpdateDTO.getSolution()));
         assertThat(updatedTask.getIncorrectAnswerLimit(), is(taskUpdateDTO.getIncorrectAnswerLimit()));
         assertThat(updatedTask.isModifySandbox(), is(taskUpdateDTO.isModifySandbox()));
@@ -199,6 +211,9 @@ class TasksControllerIT {
         assertThat(copiedTask.getOrder(), is(1));
         assertThat(copiedTask.getContent(), is(taskCopyDTO.getContent()));
         assertThat(copiedTask.getAnswer(), is(taskCopyDTO.getAnswer()));
+        assertThat(copiedTask.isDynamicFlagEnabled(), is(taskCopyDTO.isDynamicFlagEnabled()));
+        assertThat(copiedTask.getDynamicFlagIntervalMinutes(), is(taskCopyDTO.getDynamicFlagIntervalMinutes()));
+        assertThat(copiedTask.getDynamicFlagSecret(), is(taskCopyDTO.getDynamicFlagSecret()));
         assertThat(copiedTask.getSolution(), is(taskCopyDTO.getSolution()));
         assertThat(copiedTask.getIncorrectAnswerLimit(), is(taskCopyDTO.getIncorrectAnswerLimit()));
         assertThat(copiedTask.isModifySandbox(), is(taskCopyDTO.isModifySandbox()));

@@ -51,6 +51,7 @@ import cz.cyberrange.platform.training.adaptive.service.api.SandboxServiceApi;
 import cz.cyberrange.platform.training.adaptive.service.api.SmartAssistantServiceApi;
 import cz.cyberrange.platform.training.adaptive.service.api.UserManagementServiceApi;
 import cz.cyberrange.platform.training.adaptive.service.audit.AuditEventsService;
+import cz.cyberrange.platform.training.adaptive.utils.DynamicFlagUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +70,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -693,7 +695,8 @@ public class TrainingRunService {
             throw new EntityConflictException(new EntityErrorDetail(TrainingRun.class, "id", Long.class, runId, "The answer of the current phase of training run has been already corrected."));
         }
         Task currentTask = trainingRun.getCurrentTask();
-        if (currentTask.getAnswer().equals(answer)) {
+        String expectedAnswer = DynamicFlagUtils.resolveExpectedAnswer(currentTask);
+        if (Objects.equals(expectedAnswer, answer)) {
             trainingRun.setPhaseAnswered(true);
             auditEventsService.auditCorrectAnswerSubmittedAction(trainingRun, answer);
             auditEventsService.auditPhaseCompletedAction(trainingRun);
@@ -779,7 +782,7 @@ public class TrainingRunService {
             }
             String solution = trainingRun.getCurrentTask().getSolution();
             if (solution.contains("${ANSWER}")) {
-                solution = solution.replaceAll("\\$\\{ANSWER\\}", trainingRun.getCurrentTask().getAnswer());
+                solution = solution.replaceAll("\\$\\{ANSWER\\}", DynamicFlagUtils.resolveExpectedAnswer(trainingRun.getCurrentTask()));
             }
             return solution;
         } else {

@@ -6,13 +6,13 @@ FROM maven:3.8.5-openjdk-17-slim AS build
 WORKDIR /app
 
 ARG PROJECT_ARTIFACT_ID
-ARG MAVEN_CLI_OPTS=EXTRA-OPTIONS
+ARG MAVEN_CLI_OPTS
 
 COPY pom.xml /app/pom.xml
 COPY src /app/src
 
 # Build JAR file
-RUN mvn -ntp clean install -DskipTests -DskipChecks=true $MAVEN_CLI_OPTS && \
+RUN mvn -ntp clean install -DskipTests -DskipChecks=true ${MAVEN_CLI_OPTS} && \
     cp /app/target/$PROJECT_ARTIFACT_ID-*.jar /app/$PROJECT_ARTIFACT_ID.jar
 
 ############ RUNNABLE STAGE ############

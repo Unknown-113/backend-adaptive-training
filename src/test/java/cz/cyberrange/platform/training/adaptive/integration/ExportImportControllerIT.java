@@ -10,6 +10,7 @@ import cz.cyberrange.platform.training.adaptive.persistence.entity.phase.AccessP
 import cz.cyberrange.platform.training.adaptive.persistence.entity.phase.DecisionMatrixRow;
 import cz.cyberrange.platform.training.adaptive.persistence.entity.phase.InfoPhase;
 import cz.cyberrange.platform.training.adaptive.persistence.entity.phase.QuestionnairePhase;
+import cz.cyberrange.platform.training.adaptive.persistence.entity.phase.Task;
 import cz.cyberrange.platform.training.adaptive.persistence.entity.phase.TrainingPhase;
 import cz.cyberrange.platform.training.adaptive.persistence.entity.phase.questions.Question;
 import cz.cyberrange.platform.training.adaptive.persistence.entity.phase.questions.QuestionPhaseRelation;
@@ -47,6 +48,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -143,6 +145,13 @@ public class ExportImportControllerIT {
 		trainingPhase1 = testDataFactory.getTrainingPhase1();
 		trainingPhase1.setTrainingDefinition(trainingDefinition);
 		trainingPhase1.setOrder(3);
+		Task task = testDataFactory.getTask11();
+		task.setTrainingPhase(trainingPhase1);
+		task.setDynamicFlagEnabled(true);
+		task.setDynamicFlagIntervalMinutes(15);
+		task.setDynamicFlagSecret("import-export-secret");
+		task.setAnswer(null);
+		trainingPhase1.setTasks(List.of(task));
 		DecisionMatrixRow decisionMatrixRow1 = new DecisionMatrixRow();
 		decisionMatrixRow1.setOrder(0);
 		decisionMatrixRow1.setTrainingPhase(trainingPhase1);
@@ -205,5 +214,16 @@ public class ExportImportControllerIT {
 		assertEquals(2, infoPhaseRepository.findAll().size());
 		assertEquals(4, trainingPhaseRepository.findAll().size());
 		assertEquals(2, trainingDefinitionRepository.findAll().size());
+		TrainingPhase importedTrainingPhase = trainingPhaseRepository.findAll().stream()
+				.filter(phase -> !phase.getId().equals(trainingPhase1.getId()) && "First Game Level".equals(phase.getTitle()))
+				.findFirst()
+				.orElseThrow();
+		assertEquals(1, importedTrainingPhase.getTasks().size());
+		Task importedTask = importedTrainingPhase.getTasks().get(0);
+		assertNotNull(importedTask);
+		assertEquals(true, importedTask.isDynamicFlagEnabled());
+		assertEquals(15, importedTask.getDynamicFlagIntervalMinutes());
+		assertEquals("import-export-secret", importedTask.getDynamicFlagSecret());
+		assertEquals(null, importedTask.getAnswer());
 	}
 }

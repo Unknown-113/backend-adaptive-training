@@ -20,6 +20,12 @@ public class TaskDTO {
     private String content;
     @ApiModelProperty(value = "Keyword that must be found in the task. Necessary in order to get to the next phase", required = true, example = "secretFlag")
     private String answer;
+    @ApiModelProperty(value = "If true, the expected answer is generated dynamically from the configured secret and interval.", example = "true")
+    private boolean dynamicFlagEnabled;
+    @ApiModelProperty(value = "Flag rotation interval in minutes when dynamic flag is enabled.", example = "15")
+    private Integer dynamicFlagIntervalMinutes;
+    @ApiModelProperty(value = "Secret used to generate the dynamic flag.", example = "super-secret-value")
+    private String dynamicFlagSecret;
     @ApiModelProperty(value = "Description how to get the answer", required = true, example = "Open secret.txt")
     private String solution;
     @ApiModelProperty(value = "It defines the allowed number of incorrect answers submitted by the player", required = true, example = "5")
@@ -69,6 +75,30 @@ public class TaskDTO {
         this.answer = answer;
     }
 
+    public boolean isDynamicFlagEnabled() {
+        return dynamicFlagEnabled;
+    }
+
+    public void setDynamicFlagEnabled(boolean dynamicFlagEnabled) {
+        this.dynamicFlagEnabled = dynamicFlagEnabled;
+    }
+
+    public Integer getDynamicFlagIntervalMinutes() {
+        return dynamicFlagIntervalMinutes;
+    }
+
+    public void setDynamicFlagIntervalMinutes(Integer dynamicFlagIntervalMinutes) {
+        this.dynamicFlagIntervalMinutes = dynamicFlagIntervalMinutes;
+    }
+
+    public String getDynamicFlagSecret() {
+        return dynamicFlagSecret;
+    }
+
+    public void setDynamicFlagSecret(String dynamicFlagSecret) {
+        this.dynamicFlagSecret = dynamicFlagSecret;
+    }
+
     public String getSolution() {
         return solution;
     }
@@ -114,12 +144,15 @@ public class TaskDTO {
                 Objects.equals(order, taskDTO.order) &&
                 Objects.equals(content, taskDTO.content) &&
                 Objects.equals(answer, taskDTO.answer) &&
+                dynamicFlagEnabled == taskDTO.dynamicFlagEnabled &&
+                Objects.equals(dynamicFlagIntervalMinutes, taskDTO.dynamicFlagIntervalMinutes) &&
+                Objects.equals(dynamicFlagSecret, taskDTO.dynamicFlagSecret) &&
                 Objects.equals(solution, taskDTO.solution);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, order, content, answer, solution, incorrectAnswerLimit, modifySandbox, sandboxChangeExpectedDuration);
+        return Objects.hash(id, title, order, content, answer, dynamicFlagEnabled, dynamicFlagIntervalMinutes, dynamicFlagSecret, solution, incorrectAnswerLimit, modifySandbox, sandboxChangeExpectedDuration);
     }
 
     @Override
@@ -130,6 +163,8 @@ public class TaskDTO {
                 ", order=" + order +
                 ", content='" + content + '\'' +
                 ", answer='" + answer + '\'' +
+                ", dynamicFlagEnabled=" + dynamicFlagEnabled +
+                ", dynamicFlagIntervalMinutes=" + dynamicFlagIntervalMinutes +
                 ", solution='" + solution + '\'' +
                 ", incorrectAnswerLimit=" + incorrectAnswerLimit +
                 ", modifySandbox=" + modifySandbox +

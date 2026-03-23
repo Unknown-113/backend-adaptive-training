@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
+import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
@@ -31,9 +32,16 @@ public class TaskImportDTO {
     @NotEmpty(message = "{task.content.NotEmpty.message}")
     private String content;
     @ApiModelProperty(value = "Keyword found in training, used for access next phase.", example = "secretFlag", position = 3)
-    @NotEmpty(message = "{task.answer.NotEmpty.message}")
     @Size(max = 50, message = "{task.answer.Size.message}")
     private String answer;
+    @ApiModelProperty(value = "If true, the expected answer is generated dynamically from the configured secret and interval.", example = "true", position = 4)
+    private boolean dynamicFlagEnabled;
+    @ApiModelProperty(value = "Flag rotation interval in minutes when dynamic flag is enabled.", example = "15", position = 5)
+    @Min(value = 1, message = "Dynamic flag interval must be at least 1 minute.")
+    private Integer dynamicFlagIntervalMinutes;
+    @ApiModelProperty(value = "Secret used to generate the dynamic flag.", example = "super-secret-value", position = 6)
+    @Size(max = 255, message = "Dynamic flag secret must be at most 255 characters.")
+    private String dynamicFlagSecret;
     @ApiModelProperty(value = "Instruction how to get answer in training.", example = "This is how you do it", position = 4)
     @NotEmpty(message = "{task.solution.NotEmpty.message}")
     private String solution;
@@ -64,6 +72,30 @@ public class TaskImportDTO {
      */
     public void setAnswer(String answer) {
         this.answer = answer;
+    }
+
+    public boolean isDynamicFlagEnabled() {
+        return dynamicFlagEnabled;
+    }
+
+    public void setDynamicFlagEnabled(boolean dynamicFlagEnabled) {
+        this.dynamicFlagEnabled = dynamicFlagEnabled;
+    }
+
+    public Integer getDynamicFlagIntervalMinutes() {
+        return dynamicFlagIntervalMinutes;
+    }
+
+    public void setDynamicFlagIntervalMinutes(Integer dynamicFlagIntervalMinutes) {
+        this.dynamicFlagIntervalMinutes = dynamicFlagIntervalMinutes;
+    }
+
+    public String getDynamicFlagSecret() {
+        return dynamicFlagSecret;
+    }
+
+    public void setDynamicFlagSecret(String dynamicFlagSecret) {
+        this.dynamicFlagSecret = dynamicFlagSecret;
     }
 
     /**
@@ -152,11 +184,24 @@ public class TaskImportDTO {
         this.order = order;
     }
 
+    @AssertTrue(message = "Static answer is required when dynamic flag is disabled, and dynamic flag requires both secret and interval.")
+    public boolean isAnswerConfigurationValid() {
+        if (dynamicFlagEnabled) {
+            return dynamicFlagIntervalMinutes != null
+                    && dynamicFlagIntervalMinutes > 0
+                    && dynamicFlagSecret != null
+                    && !dynamicFlagSecret.isBlank();
+        }
+        return answer != null && !answer.isBlank();
+    }
+
     @Override
     public String toString() {
         return "TaskImportDTO{" +
                 "title='" + title + '\'' +
                 ", answer='" + answer + '\'' +
+                ", dynamicFlagEnabled=" + dynamicFlagEnabled +
+                ", dynamicFlagIntervalMinutes=" + dynamicFlagIntervalMinutes +
                 ", content='" + content + '\'' +
                 ", solution='" + solution + '\'' +
                 ", incorrectAnswerLimit=" + incorrectAnswerLimit +
