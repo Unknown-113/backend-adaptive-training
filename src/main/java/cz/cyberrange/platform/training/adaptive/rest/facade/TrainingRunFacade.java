@@ -36,7 +36,9 @@ import cz.cyberrange.platform.training.adaptive.persistence.enums.QuestionType;
 import cz.cyberrange.platform.training.adaptive.api.mapping.PhaseMapper;
 import cz.cyberrange.platform.training.adaptive.api.mapping.SubmissionMapper;
 import cz.cyberrange.platform.training.adaptive.api.mapping.TrainingRunMapper;
+import cz.cyberrange.platform.training.adaptive.persistence.enums.RoleTypeSecurity;
 import cz.cyberrange.platform.training.adaptive.service.QuestionnaireEvaluationService;
+import cz.cyberrange.platform.training.adaptive.service.SecurityService;
 import cz.cyberrange.platform.training.adaptive.service.api.UserManagementServiceApi;
 import cz.cyberrange.platform.training.adaptive.service.training.TrainingDefinitionAccessGuardService;
 import cz.cyberrange.platform.training.adaptive.service.training.TrainingRunService;
@@ -77,6 +79,7 @@ public class TrainingRunFacade {
 
     private final TrainingRunService trainingRunService;
     private final TrainingDefinitionAccessGuardService trainingDefinitionAccessGuardService;
+    private final SecurityService securityService;
     private final UserManagementServiceApi userManagementServiceApi;
     private final TrainingRunMapper trainingRunMapper;
     private final PhaseMapper phaseMapper;
@@ -93,6 +96,7 @@ public class TrainingRunFacade {
     @Autowired
     public TrainingRunFacade(TrainingRunService trainingRunService,
                              TrainingDefinitionAccessGuardService trainingDefinitionAccessGuardService,
+                             SecurityService securityService,
                              QuestionnaireEvaluationService questionnaireEvaluationService,
                              UserManagementServiceApi userManagementServiceApi,
                              TrainingRunMapper trainingRunMapper,
@@ -100,6 +104,7 @@ public class TrainingRunFacade {
                              SubmissionMapper submissionMapper) {
         this.trainingRunService = trainingRunService;
         this.trainingDefinitionAccessGuardService = trainingDefinitionAccessGuardService;
+        this.securityService = securityService;
         this.questionnaireEvaluationService = questionnaireEvaluationService;
         this.userManagementServiceApi = userManagementServiceApi;
         this.trainingRunMapper = trainingRunMapper;
@@ -203,10 +208,12 @@ public class TrainingRunFacade {
     public AccessTrainingRunDTO accessTrainingRun(String accessToken) {
         TrainingInstance trainingInstance = trainingRunService.getTrainingInstanceForParticularAccessToken(accessToken);
         Long participantRefId = userManagementServiceApi.getLoggedInUserRefId();
-        trainingDefinitionAccessGuardService.checkAndRegisterAccess(
-                participantRefId,
-                trainingInstance.getTrainingDefinition().getId()
-        );
+        if (!securityService.hasRole(RoleTypeSecurity.ROLE_ADAPTIVE_TRAINING_ADMINISTRATOR)) {
+            trainingDefinitionAccessGuardService.checkAndRegisterAccess(
+                    participantRefId,
+                    trainingInstance.getTrainingDefinition().getId()
+            );
+        }
         // checking if the user is not accessing to his existing training run (resume action)
         Optional<TrainingRun> accessedTrainingRun = trainingRunService.findRunningTrainingRunOfUser(accessToken, participantRefId);
         if (accessedTrainingRun.isPresent()) {
