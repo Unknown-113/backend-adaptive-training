@@ -38,6 +38,7 @@ import cz.cyberrange.platform.training.adaptive.api.mapping.SubmissionMapper;
 import cz.cyberrange.platform.training.adaptive.api.mapping.TrainingRunMapper;
 import cz.cyberrange.platform.training.adaptive.service.QuestionnaireEvaluationService;
 import cz.cyberrange.platform.training.adaptive.service.api.UserManagementServiceApi;
+import cz.cyberrange.platform.training.adaptive.service.training.TrainingDefinitionAccessGuardService;
 import cz.cyberrange.platform.training.adaptive.service.training.TrainingRunService;
 import cz.cyberrange.platform.training.adaptive.utils.Sort;
 import org.slf4j.Logger;
@@ -75,6 +76,7 @@ public class TrainingRunFacade {
     private String centralSyslogIp;
 
     private final TrainingRunService trainingRunService;
+    private final TrainingDefinitionAccessGuardService trainingDefinitionAccessGuardService;
     private final UserManagementServiceApi userManagementServiceApi;
     private final TrainingRunMapper trainingRunMapper;
     private final PhaseMapper phaseMapper;
@@ -90,12 +92,14 @@ public class TrainingRunFacade {
      */
     @Autowired
     public TrainingRunFacade(TrainingRunService trainingRunService,
+                             TrainingDefinitionAccessGuardService trainingDefinitionAccessGuardService,
                              QuestionnaireEvaluationService questionnaireEvaluationService,
                              UserManagementServiceApi userManagementServiceApi,
                              TrainingRunMapper trainingRunMapper,
                              PhaseMapper phaseMapper,
                              SubmissionMapper submissionMapper) {
         this.trainingRunService = trainingRunService;
+        this.trainingDefinitionAccessGuardService = trainingDefinitionAccessGuardService;
         this.questionnaireEvaluationService = questionnaireEvaluationService;
         this.userManagementServiceApi = userManagementServiceApi;
         this.trainingRunMapper = trainingRunMapper;
@@ -198,8 +202,12 @@ public class TrainingRunFacade {
     @Transactional
     public AccessTrainingRunDTO accessTrainingRun(String accessToken) {
         TrainingInstance trainingInstance = trainingRunService.getTrainingInstanceForParticularAccessToken(accessToken);
-        // checking if the user is not accessing to his existing training run (resume action)
         Long participantRefId = userManagementServiceApi.getLoggedInUserRefId();
+        trainingDefinitionAccessGuardService.checkAndRegisterAccess(
+                participantRefId,
+                trainingInstance.getTrainingDefinition().getId()
+        );
+        // checking if the user is not accessing to his existing training run (resume action)
         Optional<TrainingRun> accessedTrainingRun = trainingRunService.findRunningTrainingRunOfUser(accessToken, participantRefId);
         if (accessedTrainingRun.isPresent()) {
             return convertToAccessTrainingRunDTO(trainingRunService.resumeTrainingRun(accessedTrainingRun.get().getId()));
