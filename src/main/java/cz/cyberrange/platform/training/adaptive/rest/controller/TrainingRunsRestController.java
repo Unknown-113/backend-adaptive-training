@@ -529,6 +529,54 @@ public class TrainingRunsRestController {
     }
 
     /**
+     * Generate a Deep Link URL for terminal-based exam access.
+     *
+     * @param runId the training run id
+     * @return DeepLinkDTO with the one-time URL
+     */
+    @ApiOperation(httpMethod = "POST",
+            value = "Generate a deep link URL for terminal-based exam access.",
+            nickname = "generateDeepLink",
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Deep link URL generated successfully."),
+            @ApiResponse(code = 404, message = "The training run has not been found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Unexpected condition was encountered.", response = ApiError.class)
+    })
+    @PostMapping(path = "/{runId}/deep-link", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<cz.cyberrange.platform.training.adaptive.api.dto.trainingrun.DeepLinkDTO> generateDeepLink(
+            @ApiParam(value = "Training run ID", required = true) @PathVariable("runId") Long runId) {
+        return ResponseEntity.ok(trainingRunFacade.generateDeepLink(runId));
+    }
+
+    /**
+     * Validate a terminal session token and redirect to the exam web interface.
+     *
+     * @param runId  the training run id
+     * @param token  the one-time session token
+     * @return HTTP 302 redirect to the exam frontend URL
+     */
+    @ApiOperation(httpMethod = "GET",
+            value = "Validate terminal session token and redirect to exam web interface.",
+            nickname = "terminalAccess")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "HTML page that injects JWT and redirects to exam UI."),
+            @ApiResponse(code = 401, message = "Token is invalid, expired, or already used.", response = ApiError.class),
+            @ApiResponse(code = 404, message = "The training run has not been found.", response = ApiError.class),
+            @ApiResponse(code = 500, message = "Unexpected condition was encountered.", response = ApiError.class)
+    })
+    @GetMapping(path = "/{runId}/terminal-access", produces = MediaType.TEXT_HTML_VALUE)
+    @org.springframework.security.access.prepost.PreAuthorize("permitAll()")
+    public ResponseEntity<String> terminalAccess(
+            @ApiParam(value = "Training run ID", required = true) @PathVariable("runId") Long runId,
+            @ApiParam(value = "One-time session token", required = true) @RequestParam("token") String token) {
+        String html = trainingRunFacade.validateTerminalAccess(runId, token);
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_HTML)
+                .body(html);
+    }
+
+    /**
      * The type Training run rest resource.
      */
     @ApiModel(value = "TrainingRunRestResource",

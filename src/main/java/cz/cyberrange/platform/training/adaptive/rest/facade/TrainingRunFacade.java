@@ -28,8 +28,10 @@ import cz.cyberrange.platform.training.adaptive.api.dto.responses.PageResultReso
 import cz.cyberrange.platform.training.adaptive.api.dto.training.preview.TrainingPhasePreviewDTO;
 import cz.cyberrange.platform.training.adaptive.api.dto.trainingrun.AccessTrainingRunDTO;
 import cz.cyberrange.platform.training.adaptive.api.dto.trainingrun.AccessedTrainingRunDTO;
+import cz.cyberrange.platform.training.adaptive.api.dto.trainingrun.DeepLinkDTO;
 import cz.cyberrange.platform.training.adaptive.api.dto.trainingrun.TrainingRunByIdDTO;
 import cz.cyberrange.platform.training.adaptive.api.dto.trainingrun.TrainingRunDTO;
+import cz.cyberrange.platform.training.adaptive.persistence.entity.TerminalSessionToken;
 import cz.cyberrange.platform.training.adaptive.persistence.enums.Actions;
 import cz.cyberrange.platform.training.adaptive.persistence.enums.PhaseType;
 import cz.cyberrange.platform.training.adaptive.persistence.enums.QuestionType;
@@ -76,6 +78,12 @@ public class TrainingRunFacade {
 
     @Value("${central.syslog.ip:127.0.0.1}")
     private String centralSyslogIp;
+
+    @Value("${server.base-url:http://localhost:8080}")
+    private String baseUrl;
+
+    @Value("${frontend.url:http://localhost:4200}")
+    private String frontendUrl;
 
     private final TrainingRunService trainingRunService;
     private final TrainingDefinitionAccessGuardService trainingDefinitionAccessGuardService;
@@ -588,5 +596,58 @@ public class TrainingRunFacade {
     public String getBearerToken() {
         JwtAuthenticationToken authentication = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
         return authentication.getToken().getTokenValue();
+    }
+
+    public String getSessionState() {
+        JwtAuthenticationToken authentication = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        Object sid = authentication.getToken().getClaims().get("sid");
+        return sid != null ? sid.toString() : "";
+    }
+
+    /**
+     * Generates a Deep Link URL for terminal-based exam access.
+     *
+     * @param trainingRunId the training run id
+     * @return {@link DeepLinkDTO} containing the deep link URL and expiry info
+     */
+    @PreAuthorize("hasAuthority(T(cz.cyberrange.platform.training.adaptive.persistence.enums.RoleTypeSecurity).ROLE_ADAPTIVE_TRAINING_ADMINISTRATOR)" +
+            "or @securityService.isTraineeOfGivenTrainingRun(#trainingRunId)")
+    @TransactionalWO
+    public DeepLinkDTO generateDeepLink(Long trainingRunId) {
+        String jwt = getBearerToken();
+        String sessionState = getSessionState();
+        TerminalSessionToken sessionToken = trainingRunService.generateTerminalSessionToken(trainingRunId, jwt, null, sessionState);
+        String deepLinkUrl = baseUrl + "/training-runs/" + trainingRunId + "/terminal-access?token=" + sessionToken.getToken();
+        return new DeepLinkDTO(deepLinkUrl, trainingRunId, sessionToken.getExpiresAt());
+    }
+
+    /**
+     * Validates a terminal session token and returns the redirect URL for the exam web interface.
+     *
+     * @param trainingRunId the training run id from the path
+     * @param token         the one-time session token
+     * @return the frontend redirect URL with the bearer token embedded
+     */
+    @TransactionalWO
+    public String validateTerminalAccess(Long trainingRunId, String token) {
+        TerminalSessionToken sessionToken = trainingRunService.validateAndConsumeTerminalSessionToken(token);
+        if (!sessionToken.getTrainingRunId().equals(trainingRunId)) {
+            throw new cz.cyberrange.platform.training.adaptive.definition.exceptions.EntityNotFoundException(
+                    new cz.cyberrange.platform.training.adaptive.definition.exceptions.EntityErrorDetail(
+                            "Terminal session token does not match the requested training run."));
+        }
+        String targetUrl = frontendUrl + "/run/adaptive/" + sessionToken.getAccessToken() + "/access";
+        String jwt = sessionToken.getJwtToken();
+        String sessionState = sessionToken.getSessionState() != null ? sessionToken.getSessionState() : "";
+        return "<!DOCTYPE html><html><head><meta charset='UTF-8'>" +
+                "<title>Redirecting to exam...</title></head><body>" +
+                "<p>Redirecting to exam, please wait...</p>" +
+                "<script>" +
+                "localStorage.setItem('access_token', '" + jwt + "');" +
+                "localStorage.setItem('access_token_stored_at', Date.now().toString());" +
+                "localStorage.setItem('session_state', '" + sessionState + "');" +
+                "localStorage.setItem('sentinel_auth_provider_id', 'CRCZP-Client');" +
+                "window.location.replace('" + targetUrl + "');" +
+                "</script></body></html>";
     }
 }

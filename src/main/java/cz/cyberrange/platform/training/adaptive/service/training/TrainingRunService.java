@@ -6,6 +6,7 @@ import cz.cyberrange.platform.training.adaptive.persistence.entity.ParticipantTa
 import cz.cyberrange.platform.training.adaptive.persistence.entity.SolutionInfo;
 import cz.cyberrange.platform.training.adaptive.persistence.entity.Submission;
 import cz.cyberrange.platform.training.adaptive.persistence.entity.TRAcquisitionLock;
+import cz.cyberrange.platform.training.adaptive.persistence.entity.TerminalSessionToken;
 import cz.cyberrange.platform.training.adaptive.persistence.entity.User;
 import cz.cyberrange.platform.training.adaptive.persistence.entity.phase.AbstractPhase;
 import cz.cyberrange.platform.training.adaptive.persistence.entity.phase.AccessPhase;
@@ -41,6 +42,7 @@ import cz.cyberrange.platform.training.adaptive.persistence.repository.QuestionA
 import cz.cyberrange.platform.training.adaptive.persistence.repository.QuestionsPhaseRelationResultRepository;
 import cz.cyberrange.platform.training.adaptive.persistence.repository.SubmissionRepository;
 import cz.cyberrange.platform.training.adaptive.persistence.repository.TRAcquisitionLockRepository;
+import cz.cyberrange.platform.training.adaptive.persistence.repository.TerminalSessionTokenRepository;
 import cz.cyberrange.platform.training.adaptive.persistence.repository.UserRefRepository;
 import cz.cyberrange.platform.training.adaptive.persistence.repository.phases.AbstractPhaseRepository;
 import cz.cyberrange.platform.training.adaptive.persistence.repository.phases.TrainingPhaseQuestionsFulfillmentRepository;
@@ -100,6 +102,7 @@ public class TrainingRunService {
     private final QuestionsPhaseRelationResultRepository questionsPhaseRelationResultRepository;
     private final QuestionAnswerRepository questionAnswerRepository;
     private final SubmissionRepository submissionRepository;
+    private final TerminalSessionTokenRepository terminalSessionTokenRepository;
     @Value("${smart-assistant-service.suitable-task-delay:5}")
     private int findSuitableTaskDelay;
 
@@ -129,7 +132,8 @@ public class TrainingRunService {
                               ParticipantTaskAssignmentRepository participantTaskAssignmentRepository,
                               QuestionsPhaseRelationResultRepository questionsPhaseRelationResultRepository,
                               QuestionAnswerRepository questionAnswerRepository,
-                              SubmissionRepository submissionRepository) {
+                              SubmissionRepository submissionRepository,
+                              TerminalSessionTokenRepository terminalSessionTokenRepository) {
         this.sandboxServiceApi = sandboxServiceApi;
         this.trainingRunRepository = trainingRunRepository;
         this.abstractPhaseRepository = abstractPhaseRepository;
@@ -145,6 +149,7 @@ public class TrainingRunService {
         this.questionsPhaseRelationResultRepository = questionsPhaseRelationResultRepository;
         this.questionAnswerRepository = questionAnswerRepository;
         this.submissionRepository = submissionRepository;
+        this.terminalSessionTokenRepository = terminalSessionTokenRepository;
     }
 
     /**
@@ -871,6 +876,46 @@ public class TrainingRunService {
         trainingRun.setSandboxInstanceAllocationId(null);
         trAcquisitionLockRepository.deleteByParticipantRefIdAndTrainingInstanceId(trainingRun.getParticipantRef().getUserRefId(), trainingRun.getTrainingInstance().getId());
         trainingRunRepository.save(trainingRun);
+    }
+
+    /**
+     * Generates a one-time-use terminal session token for the given training run.
+     * The token is valid for 300 seconds.
+     *
+     * @param trainingRunId the training run id
+     * @return the generated token string (UUID)
+     */
+    public TerminalSessionToken generateTerminalSessionToken(Long trainingRunId, String jwtToken, String refreshToken, String sessionState) {
+        TrainingRun trainingRun = findById(trainingRunId);
+        String instanceAccessToken = trainingRun.getTrainingInstance().getAccessToken();
+        TerminalSessionToken sessionToken = new TerminalSessionToken();
+        sessionToken.setToken(java.util.UUID.randomUUID().toString());
+        sessionToken.setTrainingRunId(trainingRunId);
+        sessionToken.setCreatedAt(LocalDateTime.now());
+        sessionToken.setExpiresAt(LocalDateTime.now().plusSeconds(600));
+        sessionToken.setUsed(false);
+        sessionToken.setJwtToken(jwtToken);
+        sessionToken.setRefreshToken(refreshToken);
+        sessionToken.setSessionState(sessionState);
+        sessionToken.setAccessToken(instanceAccessToken);
+        return terminalSessionTokenRepository.save(sessionToken);
+    }
+
+    /**
+     * Validates and consumes a terminal session token (one-time use).
+     *
+     * @param token the token string to validate
+     * @return the training run id associated with the token
+     * @throws EntityNotFoundException if the token is invalid, expired, or already used
+     */
+    public TerminalSessionToken validateAndConsumeTerminalSessionToken(String token) {
+        TerminalSessionToken sessionToken = terminalSessionTokenRepository
+                .findValidByToken(token, LocalDateTime.now())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        new EntityErrorDetail("Terminal session token is invalid, expired, or already used.")));
+        sessionToken.setUsed(true);
+        terminalSessionTokenRepository.save(sessionToken);
+        return sessionToken;
     }
 
     public List<QuestionAnswer> getQuestionAnswersByTrainingRunId(Long runId) {
